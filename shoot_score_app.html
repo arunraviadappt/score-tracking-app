@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Shoot Day Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --coral:#ff5c35; --teal:#00c98d; --amber:#f5a623; --blue:#4a9eff; }
+  [data-theme="dark"] {
+    --bg:#0e0e0e; --surface:#1a1a1a; --surface2:#242424;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+    --text:#f0ede8; --text2:#888; --text3:#444;
+    --input-bg:#242424;
+  }
+  [data-theme="light"] {
+    --bg:#f4f2ee; --surface:#ffffff; --surface2:#f0ede8;
+    --border:rgba(0,0,0,0.09); --border2:rgba(0,0,0,0.18);
+    --text:#1a1a1a; --text2:#666; --text3:#aaa;
+    --input-bg:#f7f5f2;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; transition:background 0.2s,color 0.2s; }
+  h1,h2,h3,h4 { font-family:'Syne',sans-serif; }
+
+  .nav { display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid var(--border); }
+  .nav-logo { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-0.5px; color:var(--text); }
+  .nav-logo span { color:var(--coral); }
+  .nav-right { display:flex; align-items:center; gap:14px; }
+  .nav-stunt { font-size:13px; color:var(--text2); }
+
+  .theme-toggle { display:flex; align-items:center; background:var(--surface2); border-radius:20px; border:1px solid var(--border); padding:3px; }
+  .theme-opt { padding:5px 12px; border-radius:16px; font-size:11px; font-weight:600; font-family:'Syne',sans-serif; letter-spacing:0.04em; cursor:pointer; color:var(--text2); transition:all 0.18s; }
+  .theme-opt.active { background:var(--surface); color:var(--text); }
+
+  .stunt-tabs { display:flex; gap:7px; padding:18px 28px 0; overflow-x:auto; }
+  .stunt-tabs::-webkit-scrollbar { display:none; }
+  .stunt-tab { flex:1; min-width:80px; padding:11px 6px; border-radius:12px; border:1px solid var(--border); background:var(--surface); cursor:pointer; text-align:center; transition:all 0.18s; }
+  .stunt-tab .tab-num { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--text3); transition:color 0.18s; }
+  .stunt-tab .tab-name { font-size:10px; color:var(--text2); margin-top:3px; line-height:1.3; }
+  .stunt-tab.active { border-color:var(--coral); }
+  .stunt-tab.active .tab-num { color:var(--coral); }
+  [data-theme="dark"] .stunt-tab.active { background:rgba(255,92,53,0.08); }
+  [data-theme="light"] .stunt-tab.active { background:rgba(255,92,53,0.06); }
+
+  .main { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:20px 28px; }
+
+  .panel { background:var(--surface); border-radius:16px; border:1px solid var(--border); overflow:hidden; }
+  .panel-header { padding:15px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+  .panel-body { padding:20px; }
+
+  .performer-badge { display:inline-flex; align-items:center; gap:8px; border-radius:8px; padding:6px 12px; margin-bottom:16px; border:1px solid rgba(255,92,53,0.28); }
+  [data-theme="dark"] .performer-badge { background:rgba(255,92,53,0.12); }
+  [data-theme="light"] .performer-badge { background:rgba(255,92,53,0.07); }
+  .performer-dot { width:7px; height:7px; border-radius:50%; background:var(--coral); flex-shrink:0; }
+  .performer-label { font-size:12px; color:var(--coral); font-weight:500; }
+
+  .hint-box { border-radius:10px; padding:10px 13px; margin-bottom:16px; font-size:12px; color:var(--text2); line-height:1.6; border:1px solid rgba(245,166,35,0.2); }
+  [data-theme="dark"] .hint-box { background:rgba(245,166,35,0.07); }
+  [data-theme="light"] .hint-box { background:rgba(245,166,35,0.06); }
+  .hint-box strong { color:var(--amber); font-weight:500; }
+
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:11px; color:var(--text2); margin-bottom:6px; letter-spacing:0.05em; text-transform:uppercase; }
+  .field input { width:100%; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:15px; color:var(--text); font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s; }
+  .field input:focus { border-color:var(--coral); }
+  .field input::placeholder { color:var(--text3); }
+
+  .divider { height:1px; background:var(--border); margin:18px 0; }
+  .section-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
+
+  .guesser-entry { display:flex; gap:8px; align-items:flex-end; margin-bottom:10px; }
+  .guesser-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:1; }
+  .remove-btn { width:38px; height:44px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text2); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .remove-btn:hover { border-color:var(--coral); color:var(--coral); }
+  .add-btn { width:100%; padding:11px; border-radius:10px; border:1px dashed var(--border2); background:transparent; color:var(--text2); font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.2s; margin-top:2px; }
+  .add-btn:hover { border-color:var(--coral); color:var(--coral); }
+
+  .submit-btn { width:100%; padding:15px; border-radius:12px; border:none; background:var(--coral); color:#fff; font-family:'Syne',sans-serif; font-size:16px; font-weight:700; cursor:pointer; margin-top:18px; transition:all 0.2s; letter-spacing:0.02em; }
+  .submit-btn:hover { background:#e04a25; }
+  .submit-btn:active { transform:scale(0.98); }
+
+  .results-empty { text-align:center; padding:40px 20px; color:var(--text3); font-size:14px; line-height:1.7; }
+  .result-card { background:var(--surface2); border-radius:12px; padding:14px 16px; margin-bottom:10px; border:1px solid var(--border); position:relative; overflow:hidden; }
+  .result-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--border); }
+  .result-card.win::before { background:var(--teal); }
+  .result-card.partial::before { background:var(--amber); }
+  .result-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .result-stunt-tag { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; }
+  .result-time { font-size:10px; color:var(--text3); }
+  .result-performer { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .result-actual { font-size:13px; color:var(--text2); margin-bottom:10px; }
+  .result-actual span { color:var(--amber); font-weight:500; }
+  .guesses-list { display:flex; flex-direction:column; gap:5px; }
+  .guess-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border-radius:8px; padding:7px 10px; gap:6px; }
+  .guess-name { font-size:13px; font-weight:500; color:var(--text); flex:1; }
+  .guess-val { font-size:13px; color:var(--text2); }
+  .guess-badge { font-size:10px; font-weight:600; padding:2px 8px; border-radius:6px; letter-spacing:0.04em; flex-shrink:0; }
+  .badge-win { background:rgba(0,201,141,0.15); color:var(--teal); }
+  .badge-close { background:rgba(245,166,35,0.15); color:var(--amber); }
+  .badge-out { background:rgba(128,128,128,0.1); color:var(--text3); }
+
+  .scoreboard { padding:0 28px 32px; }
+  .score-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .score-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+  .score-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:10px; }
+  .score-card { background:var(--surface); border-radius:12px; padding:14px 16px; border:1px solid var(--border); }
+  .score-card.top { border-color:rgba(0,201,141,0.35); }
+  .score-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .score-num { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--text); line-height:1; margin-bottom:4px; }
+  .score-num.top-num { color:var(--teal); }
+  .score-detail { font-size:11px; color:var(--text2); }
+  .empty-score { color:var(--text3); font-size:13px; padding:8px 0; }
+
+  .clear-btn { background:transparent; border:1px solid var(--border); border-radius:8px; padding:6px 12px; color:var(--text2); font-size:12px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+  .clear-btn:hover { border-color:var(--coral); color:var(--coral); }
+
+  @media(max-width:700px) {
+    .main { grid-template-columns:1fr; padding:14px; }
+    .stunt-tabs { padding:14px 14px 0; }
+    .scoreboard { padding:0 14px 24px; }
+    .nav { padding:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo">shoot<span>.</span>day</div>
+  <div class="nav-right">
+    <div class="nav-stunt" id="nav-stunt-label">Select a stunt</div>
+    <div class="theme-toggle">
+      <div class="theme-opt active" id="opt-dark" onclick="setTheme('dark')">Dark</div>
+      <div class="theme-opt" id="opt-light" onclick="setTheme('light')">Light</div>
+    </div>
+  </div>
+</div>
+
+<div class="stunt-tabs" id="stunt-tabs"></div>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">New round</div></div>
+    <div class="panel-body">
+      <div class="performer-badge"><div class="performer-dot"></div><div class="performer-label">Performer</div></div>
+      <div class="field">
+        <label>Performer name</label>
+        <input type="text" id="performer-name" placeholder="e.g. Ravi" autocomplete="off">
+      </div>
+      <div class="hint-box" id="stunt-hint"></div>
+      <div class="divider"></div>
+      <div class="section-label">Guessers</div>
+      <div id="guessers-container"></div>
+      <button class="add-btn" onclick="addGuesser()">+ add guesser</button>
+      <div class="divider"></div>
+      <div class="section-label">Actual result</div>
+      <div class="field" style="margin-bottom:0;">
+        <label id="actual-label">Answer</label>
+        <input type="text" id="actual-answer" placeholder="Enter result" autocomplete="off">
+      </div>
+      <button class="submit-btn" onclick="submitRound()">Log this round</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Round log</div>
+      <button class="clear-btn" onclick="clearLog()">Clear all</button>
+    </div>
+    <div class="panel-body" id="results-list" style="max-height:580px;overflow-y:auto;">
+      <div class="results-empty">No rounds logged yet.<br>Fill in a round and tap log.</div>
+    </div>
+  </div>
+</div>
+
+<div class="scoreboard">
+  <div class="score-header"><div class="score-title">Overall leaderboard</div></div>
+  <div class="score-grid" id="score-grid"><div class="empty-score">No data yet.</div></div>
+</div>
+
+<script>
+const STUNTS = [
+  { name:'Countries — S', short:'Countries', hint:'<strong>Stunt:</strong> Name as many countries starting with "S" in 30 seconds. Guessers predict the count before the attempt.', actualLabel:'Number of countries named', placeholder:'e.g. 7' },
+  { name:'Blindfold darts', short:'Darts', hint:'<strong>Stunt:</strong> Throw 3 darts blindfolded at the magnetic board. Guessers predict how many hit.', actualLabel:'Darts that hit the board', placeholder:'e.g. 2' },
+  { name:'Toilet paper wrap', short:'Wrap', hint:'<strong>Stunt:</strong> Two people wrap one person in 60 seconds. Guessers rate the final result out of 10.', actualLabel:'Rating (1–10) or time taken', placeholder:'e.g. 8' },
+  { name:'Table tennis bounces', short:'Ping pong', hint:'<strong>Stunt:</strong> Bounce a ball continuously on a bat within the time limit. Guessers predict the bounce count.', actualLabel:'Total number of bounces', placeholder:'e.g. 34' },
+  { name:'Cup catch', short:'Cup catch', hint:'<strong>Stunt:</strong> Bounce a plastic ball off the table and catch it solo in a cup. Guessers predict how many catches within the time limit.', actualLabel:'Number of successful catches', placeholder:'e.g. 5' }
+];
+
+let currentStunt = 0;
+let rounds = [];
+let guesserCount = 0;
+
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('opt-dark').classList.toggle('active', t==='dark');
+  document.getElementById('opt-light').classList.toggle('active', t==='light');
+}
+
+function buildTabs() {
+  document.getElementById('stunt-tabs').innerHTML = STUNTS.map((s,i) =>
+    `<div class="stunt-tab${i===0?' active':''}" onclick="selectStunt(${i})" id="tab-${i}">
+      <div class="tab-num">${i+1}</div>
+      <div class="tab-name">${s.short}</div>
+    </div>`
+  ).join('');
+}
+
+function selectStunt(idx) {
+  currentStunt = idx;
+  document.querySelectorAll('.stunt-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  const s = STUNTS[idx];
+  document.getElementById('nav-stunt-label').textContent = s.name;
+  document.getElementById('stunt-hint').innerHTML = s.hint;
+  document.getElementById('actual-label').textContent = s.actualLabel;
+  document.getElementById('actual-answer').placeholder = s.placeholder;
+  document.querySelectorAll('.g-guess').forEach(el => el.placeholder = s.placeholder);
+}
+
+function addGuesser() {
+  guesserCount++;
+  const id = guesserCount;
+  const div = document.createElement('div');
+  div.className = 'guesser-entry';
+  div.id = 'guesser-' + id;
+  div.innerHTML = `
+    <div class="guesser-fields">
+      <div class="field" style="margin-bottom:0;"><label>Name</label><input type="text" placeholder="e.g. Priya" autocomplete="off" class="g-name"></div>
+      <div class="field" style="margin-bottom:0;"><label>Their guess</label><input type="text" placeholder="${STUNTS[currentStunt].placeholder}" autocomplete="off" class="g-guess"></div>
+    </div>
+    <button class="remove-btn" onclick="removeGuesser(${id})">×</button>`;
+  document.getElementById('guessers-container').appendChild(div);
+}
+
+function removeGuesser(id) {
+  const el = document.getElementById('guesser-'+id);
+  if (el) el.remove();
+}
+
+function isExact(g,a) { return g.trim().toLowerCase()===a.trim().toLowerCase(); }
+function isClose(g,a) { const gn=parseFloat(g),an=parseFloat(a); return !isNaN(gn)&&!isNaN(an)&&Math.abs(gn-an)<=1; }
+
+function submitRound() {
+  const performer = document.getElementById('performer-name').value.trim();
+  const actual = document.getElementById('actual-answer').value.trim();
+  if (!performer||!actual) { alert('Please fill in performer name and actual answer.'); return; }
+  const guessers = [];
+  document.querySelectorAll('.guesser-entry').forEach(row => {
+    const name = row.querySelector('.g-name').value.trim();
+    const guess = row.querySelector('.g-guess').value.trim();
+    if (name) guessers.push({name,guess});
+  });
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  rounds.unshift({stunt:STUNTS[currentStunt].name, performer, actual, guessers, time, id:Date.now()});
+  renderResults();
+  renderScoreboard();
+  resetForm();
+}
+
+function renderResults() {
+  const c = document.getElementById('results-list');
+  if (!rounds.length) { c.innerHTML='<div class="results-empty">No rounds logged yet.<br>Fill in a round and tap log.</div>'; return; }
+  c.innerHTML = rounds.map(r => {
+    const hasWin = r.guessers.some(g=>isExact(g.guess,r.actual));
+    const hasClose = r.guessers.some(g=>!isExact(g.guess,r.actual)&&isClose(g.guess,r.actual));
+    const guessHTML = r.guessers.length
+      ? '<div class="guesses-list">'+r.guessers.map(g=>{
+          const ex=isExact(g.guess,r.actual), cl=!ex&&isClose(g.guess,r.actual);
+          return `<div class="guess-item"><span class="guess-name">${g.name}</span><span class="guess-val">${g.guess||'—'}</span><span class="guess-badge ${ex?'badge-win':cl?'badge-close':'badge-out'}">${ex?'WINNER':cl?'CLOSE':'OUT'}</span></div>`;
+        }).join('')+'</div>'
+      : '<div style="font-size:12px;color:var(--text3)">No guessers recorded</div>';
+    return `<div class="result-card ${hasWin?'win':hasClose?'partial':''}">
+      <div class="result-header"><div class="result-stunt-tag">${r.stunt}</div><div class="result-time">${r.time}</div></div>
+      <div class="result-performer">${r.performer}</div>
+      <div class="result-actual">Actual: <span>${r.actual}</span></div>
+      ${guessHTML}</div>`;
+  }).join('');
+}
+
+function renderScoreboard() {
+  const scores = {};
+  rounds.forEach(r => r.guessers.forEach(g => {
+    if (!scores[g.name]) scores[g.name]={wins:0,close:0};
+    if (isExact(g.guess,r.actual)) scores[g.name].wins++;
+    else if (isClose(g.guess,r.actual)) scores[g.name].close++;
+  }));
+  const names = Object.keys(scores);
+  if (!names.length) { document.getElementById('score-grid').innerHTML='<div class="empty-score">No data yet.</div>'; return; }
+  names.sort((a,b)=>scores[b].wins-scores[a].wins||scores[b].close-scores[a].close);
+  document.getElementById('score-grid').innerHTML = names.map((name,i)=>{
+    const s=scores[name], top=i===0&&s.wins>0;
+    return `<div class="score-card${top?' top':''}">
+      <div class="score-name">${name}</div>
+      <div class="score-num${top?' top-num':''}">${s.wins}</div>
+      <div class="score-detail">${s.wins===1?'1 exact win':s.wins+' exact wins'}${s.close>0?' · '+s.close+' close':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function resetForm() {
+  document.getElementById('performer-name').value='';
+  document.getElementById('actual-answer').value='';
+  document.getElementById('guessers-container').innerHTML='';
+  guesserCount=0; addGuesser(); addGuesser();
+}
+
+function clearLog() {
+  if (confirm('Clear all logged rounds and scores?')) { rounds=[]; renderResults(); renderScoreboard(); }
+}
+
+buildTabs(); selectStunt(0); addGuesser(); addGuesser();
+</script>
+</body>
+</html>
